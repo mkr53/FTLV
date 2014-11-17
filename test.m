@@ -18,19 +18,24 @@ shuttleVideo.duration
 num_pixels = shuttleVideo.height * shuttleVideo.width;
 
 %our main images matrix
-
+images = zeros(numberOfFrames, num_pixels,3);
 
 ii = 1;
 
 while ii < numberOfFrames
-    img = read(shuttleVideo,ii);
+    img = reshape(read(shuttleVideo,ii), [num_pixels 3]);
+    %size(img)
+    
+    images(ii,:,:) = img;
 
     % Write out to a JPEG file (img1.jpg, img2.jpg, etc.)
-    imwrite(img,fullfile(workingDir,'images',sprintf('img%d.jpg',ii)));
+    %imwrite(img,fullfile(workingDir,'images',sprintf('img%d.jpg',ii)));
     
     ii = ii+1;
 end
 
+images
+%{
 imageNames = dir(fullfile(workingDir,'images','*.jpg'));
 imageNames = {imageNames.name}';
 
@@ -44,3 +49,4 @@ for ii = 1:length(imageNames)
 end
 
 close(outputVideo)
+%}
