@@ -12,6 +12,8 @@ end
 %   output: f x n matrix of binary values. 
 %       0 -> pixel is in shadow at this frame. 
 %       1 -> pixel is in sunlight at this frame
+k = 1.5 %value from the paper
+
 b=imread(char(imagesfiles(1)));
 [numr,numc]=size(b);
 luminanceperpixel=zeros(length(imagefiles),numr*numc);
