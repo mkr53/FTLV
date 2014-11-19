@@ -1,4 +1,4 @@
-function [ luminanceperpixel ] = shadowestimation( imagefiles )
+function [S] = shadowestimation()
 
 %load matrix of image information
 if ~exist('imagematrix.mat')
@@ -13,20 +13,14 @@ end
 %       0 -> pixel is in shadow at this frame. 
 %       1 -> pixel is in sunlight at this frame
 k = 1.5 %value from the paper
+p = 0.2 %percent of pixels to count as "shadowed"
 
-b=imread(char(imagesfiles(1)));
-[numr,numc]=size(b);
-luminanceperpixel=zeros(length(imagefiles),numr*numc);
-for i=1:length(imagefiles),
-    %cim is rowxcolumnx3
-    cim=imread(char(imagefiles(i)));
-    rim=cim(:,:,1);
-    vim=imreshape(rim,1,:);
-    luminanceperpixel(i,:)=vim;
-        
+[f,n] = size(images);
+%sort each column (pixel data) 
+[sorted,I] = sort(images,1);
+shadowed_pixels = I(1:(f*p),:);
 
-end
-j=[1:length(imagefiles)];
-plot(j,luminanceperpixel(j,1));
+S = zeros(f,n);
+S(shadowed_pixels) = 1;
 
 end

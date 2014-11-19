@@ -10,9 +10,9 @@ function [W,H] = ACLS()
     % This should work on 32 and 64 bit versions of Windows, MacOS, and Linux
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
-    %load('imagematrix.mat', 'images');
-    %V = images;
-    V = randi( [0 256], 100, 500);
+    load('imagematrix.mat', 'images');
+    V = images;
+    %V = randi( [0 256], 100, 500);
     k = 2; %k is between 1 and 5
     [n,m] = size(V);
     
@@ -25,22 +25,37 @@ function [W,H] = ACLS()
     A = -1 * eye(k);
     b = zeros(k,1);
     
-    %for each row of W, solve LCLS: C=H' d = v' x = w'
-    C = double(H');
-    for i = 1:n
-        d = V(i,:)';
-        x = lsqlin(C,d,A,b);        
-        W(i,:) = x';
+    its = 10;
+    
+    distances = zeros(its,1);
+    
+    for j = 1:its
+        %for each row of W, solve LCLS: C=H' d = v' x = w'
+        C = double(H');
+        for i = 1:n
+            d = double(V(i,:)');
+            x = lsqlin(C,d,A,b);        
+            W(i,:) = x';
+        end
+
+        %for each column of H, solve LCLS: C=W d=v x=h
+        C = double(W);
+        for i = 1:m
+            d = double(V(:,i));
+            x = lsqlin(C,d,A,b);
+            H(:,i) = x;
+        end
+
+        %check distance
+        WH = W*H;
+        A2 = reshape(WH',numel(size(WH)),1); % makes column vectors
+        B2 = reshape(V',numel(size(V)),1);
+
+        dist = sqrt(dot(A2-B2,A2-B2));
+        distances(j) = dist;
     end
     
-    %for each column of H, solve LCLS: C=W d=v x=h
-    C = double(W);
-    for i = 1:m
-        d = V(:,i);
-        x = lsqlin(C,d,A,b);
-        H(:,i) = x;
-    end
-    
+    distances
 end
 
 function [W,H] = initializeACLS(V,k)
