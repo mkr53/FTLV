@@ -13,7 +13,7 @@ function [W,H] = ACLS()
     load('imagematrix.mat', 'images');
     V = images;
     %V = randi( [0 256], 100, 500);
-    k = 2; %k is between 1 and 5
+    k = 1; %k is between 1 and 5
     [n,m] = size(V);
     
     [W,H] = initializeACLS(V,k);
@@ -25,7 +25,7 @@ function [W,H] = ACLS()
     A = -1 * eye(k);
     b = zeros(k,1);
     
-    its = 10;
+    its = 1;
     
     distances = zeros(its,1);
     

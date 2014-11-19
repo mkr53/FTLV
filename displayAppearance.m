@@ -3,8 +3,8 @@ data_directory = '/Users/elisecotton/Documents/MATLAB/FTLV/data';
 exist('imagematrix.mat')
 
 if ~exist('imagematrix.mat')
-    images = matrixGenerate;
-    save('imagematrix.mat', 'images');
+    [images, image_size]= matrixGenerate;
+    save('imagematrix.mat', 'images', 'image_size');
 else
     load('imagematrix.mat', 'images');
 end

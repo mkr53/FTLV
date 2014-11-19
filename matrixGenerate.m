@@ -1,11 +1,14 @@
 % this function gives us images an fxnx3 matrix where f is the number of
 % frames and n is the number of pixels in a single frame
-function images = matrixGenerate
+function [images,image_size] = matrixGenerate
     
 dataVideo = VideoReader('arizonadata.mpg');
 
 num_frames = dataVideo.NumberOfFrames;
 num_pixels = dataVideo.height * dataVideo.width;
+
+%height and width of original video frame
+image_size = [dataVideo.height dataVideo.width];
 
 %our main images matrix
 %images = zeros(num_frames, num_pixels,3);
