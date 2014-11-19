@@ -1,4 +1,4 @@
-function [S] = shadowestimation()
+function [S] = shadowestimation(images)
 
 %UNTITLED Summary of this function goes here
 %   output: f x n matrix of binary values. 
@@ -7,21 +7,23 @@ function [S] = shadowestimation()
 k = 1.5; %value from the paper
 p = 0.2; %percent of pixels to count as "shadowed"
 
-images = randi([0 256], 5, 25);
-images
+%images = randi([0 256], 5, 25);
 
 [f,n] = size(images);
-num_shadowed = floor(f*p)
+num_shadowed = floor(f*p);
 
 %sort each column (pixel data) 
 [sorted,I] = sort(images,1);
-sorted
 
-%CURRENT ISSUE: indexing in I is only relative to the column that its in..
-%how to make it correct in terms of larger matrix
-shadowed_pixels = I(1:num_shadowed,:)
 
+shadowed_pixels = I(1:num_shadowed,:);
+
+columns = 1:(n*num_shadowed);
+columns = ceil(columns / num_shadowed);
+
+shadowed_pixels = reshape(shadowed_pixels, 1, numel(shadowed_pixels));
+linearInd = sub2ind([f n], shadowed_pixels, columns);
 S = zeros(f,n);
-S(shadowed_pixels) = 1;
+S(linearInd) = 1;
 
 end
