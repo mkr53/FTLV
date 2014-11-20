@@ -15,15 +15,30 @@ num_shadowed = floor(f*p);
 %sort each column (pixel data) 
 [sorted,I] = sort(images,1);
 
+%first, compute the median value m_min of the num_shadowed smallest intensities at
+%each pixel
+shadowed_pixels = sorted(1:num_shadowed,:);
+m_min = median(shadowed_pixels, 1);
 
-shadowed_pixels = I(1:num_shadowed,:);
+%set shadow function to one for each F(t) > k*m_min and zero otherwise
+S = zeros(f,n);
 
+threshold = m_min * k; 
+size(threshold)
+size(images)
+for i = 1:f
+S(i,:) = images(i,:) > threshold; 
+end
+
+
+%{
 columns = 1:(n*num_shadowed);
 columns = ceil(columns / num_shadowed);
 
 shadowed_pixels = reshape(shadowed_pixels, 1, numel(shadowed_pixels));
 linearInd = sub2ind([f n], shadowed_pixels, columns);
-S = zeros(f,n);
-S(linearInd) = 1;
+S = ones(f,n);
+S(linearInd) = 0;
+%}
 
 end
