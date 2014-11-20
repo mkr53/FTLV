@@ -1,21 +1,18 @@
-data_directory = '/Users/elisecotton/Documents/MATLAB/FTLV/data';
+function displayAppearance(images, shadows, index)
 
-exist('imagematrix.mat')
-
-if ~exist('imagematrix.mat')
-    [images, image_size]= matrixGenerate;
-    save('imagematrix.mat', 'images', 'image_size');
-else
-    load('imagematrix.mat', 'images');
-end
 %images
-size(images)
 
 num_frames = size(images, 1);
 
 frames = 1:num_frames; 
 
-pixel_200_red = images(:,200,1);
+
+pixel_200_red = rgb2gray(images(:,index,:));
+shadow_200 = 50 * shadows(:,index);
 
 figure
-plot(frames, pixel_200_red)
+plot(frames, pixel_200_red,'r')
+hold
+plot(frames, shadow_200, 'm')
+
+end

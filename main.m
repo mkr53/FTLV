@@ -12,27 +12,28 @@ end
 %this is our binary sky mask. we will remove sky pixels from the matrix
 %that we do calcualtions on 
 sky_mask = imresize(imread('skymask.png', 'png'),image_size);
-size(sky_mask)
-image_size
 
 no_sky_images = removeSky(images,sky_mask);
-size(no_sky_images);
 
 images_orig = images;
-
 images = no_sky_images;
-size(images)
 
+%f = # of frames
+%n = # of pixels
 [f,n] = size(images);
+
 %compute binary shadow estimation for each frame
 size(images(:,:,1))
-S = shadowestimation(images(:,:,1));
+greyscale_images = rgb2gray(images);
+S = shadowestimation(greyscale_images, sky_mask);
 
 %to display the image, we must replace the sky
-%frame = reshape(S(275,:), image_size);
 frame = replaceSky(images, S, sky_mask);
 
-figure
+index = 110000;
+displayAppearance(images, S, index);
+
+
 implay(frame)
 
 end
@@ -41,9 +42,8 @@ function non_sky =  removeSky(images, sky_mask)
 %return new matrix: images matrix with all sky pixels removed
 %change sky_mask so that it is a single row
 mask = reshape(sky_mask, 1, numel(sky_mask));
-
 land_indices = find(mask);
-non_sky = images(:,land_indices);
+non_sky = images(:,land_indices,:);
 end
 
 function withSky = replaceSky(images, new_values, sky_mask)
