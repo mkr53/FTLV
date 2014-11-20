@@ -27,7 +27,7 @@ threshold = m_min * k;
 size(threshold)
 size(images)
 for i = 1:f
-S(i,:) = images(i,:) > threshold; 
+    S(i,:) = images(i,:) > threshold; 
 end
 
 
