@@ -1,5 +1,5 @@
 
-function [W,H] = ACLS()
+function [W,H] = ACLS(V,C)
     %Here we use alternating constrained least squares to decompose the nxm
     %matrix V into a nxk matrix W and a kxm matrix H. 
     %The concept is to minimize the euclidean error: 
@@ -12,14 +12,14 @@ function [W,H] = ACLS()
         
     %load('imagematrix.mat', 'images');
     %V = images;
-    V = randi( [0 256], 100, 500);
+    %V = randi( [0 256], 100, 500);
     k = 1; %k is between 1 and 5. paper uses 1
     [n,m] = size(V);
 
     [W,H] = initializeACLS(V,k);
     
     %confidence matrix C. this will be an input.
-    C = randi([0 1], n, m);
+    %C = randi([0 1], n, m);
     
     %we will alternate between linear squares solves of W and H:
     %x = lsqlin(C,d,A,b)solves the linear system C*x = d in the 
@@ -38,7 +38,7 @@ function [W,H] = ACLS()
     for j = 1:its
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
-            if confidence 
+            if confidence
                 %to include confidence, we do M = C_i * H'
                 M = double(C(i,:)' .* (H'));
                 %to include confidence, we do d = C_i * V_i
@@ -53,8 +53,7 @@ function [W,H] = ACLS()
 
         %for each column of H, solve LCLS: M = W d = v x = h
         %M = double(W);
-        size(W)
-        size(C(:,1))
+       
         for i = 1:m
             if confidence
                 %to include confidence, M = C_i * W and d = C_i * V_i
@@ -72,7 +71,6 @@ function [W,H] = ACLS()
         WH = W*H;
         
         thing = C .* (V - WH);
-        size(thing)
         
         distance = reshape(thing, numel(thing), 1);
         
@@ -98,10 +96,9 @@ function [W,H] = initializeACLS(V,k)
     [n,m] = size(V);
     
     [centers, assignments] = vl_kmeans(single(V), vocab_size);
-    size(centers)
     
     centers_vector = reshape(centers,1,numel(centers));
 
-    W = reshape(datasample(centers_vector,(n*k)), n, k);
-    H = reshape(datasample(centers_vector, k*m),k,m);
+    W = double(reshape(datasample(centers_vector,(n*k)), n, k));
+    H = double(reshape(datasample(centers_vector, k*m),k,m));
 end 

@@ -27,6 +27,11 @@ size(images(:,:,1))
 greyscale_images = rgb2gray(images);
 S = shadowestimation(greyscale_images, sky_mask);
 
+
+A = double(images(:,:,1)) .* (1-S);
+%factorize F(t) into Sky
+[W_sky, H_sky] = nnmf(A, 1);
+
 %to display the image, we must replace the sky
 frame = replaceSky(images, S, sky_mask);
 
