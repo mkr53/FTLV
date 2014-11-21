@@ -16,6 +16,7 @@ function [W,H] = ACLS(V,C)
     k = 1; %k is between 1 and 5. paper uses 1
     [n,m] = size(V);
 
+    fprintf('initializing W and H')
     [W,H] = initializeACLS(V,k);
     
     %confidence matrix C. this will be an input.
@@ -47,7 +48,7 @@ function [W,H] = ACLS(V,C)
                 M = double(H');
                 d = double(V(i,:)');
             end
-            x = lsqlin(M,d,A,b);        
+            x = lsqnonneg(M,d);        
             W(i,:) = x';
         end
 
@@ -63,7 +64,7 @@ function [W,H] = ACLS(V,C)
                 M = double(W);
                 d = double(V(:,i));
             end
-            x = lsqlin(M,d,A,b);
+            x = lsqnonneg(M,d);
             H(:,i) = x;
         end
 

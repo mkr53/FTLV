@@ -22,24 +22,36 @@ images = no_sky_images;
 %n = # of pixels
 [f,n] = size(images);
 
+fprintf('estimating shadows')
 %compute binary shadow estimation for each frame
 size(images(:,:,1))
 greyscale_images = rgb2gray(images);
 S = shadowestimation(greyscale_images, sky_mask);
+size(S)
 
-
-A = double(images(:,:,1)) .* (1-S);
+fprintf('factorizing F')
+%A = double(images(:,:,1)) .* (1-S);
+A = double(images(:,:,1));
+size(A)
 %factorize F(t) into Sky
-[W_sky, H_sky] = nnmf(A, 1);
+%[W_sky, H_sky, D] = nnmf(A, 1);
+[W_sky,H_sky] = ACLS(A, 1-S);
+
+H_sky
+
+size(H_sky)
+
 
 %to display the image, we must replace the sky
-frame = replaceSky(images, S, sky_mask);
+%frame = replaceSky(images, 256 * H_sky, sky_mask);
+frame = mat2gray(backIntoImage(H_sky, sky_mask), [0 256]);
+size(frame)
 
-index = 110000;
-displayAppearance(images, S, index);
-
-
-implay(frame)
+%index = 110000;
+%displayAppearance(images, S, index);
+%frame
+imshow(frame)
+%implay(frame)
 
 end
 
@@ -60,4 +72,12 @@ land_indices = find(sky_mask);
     sky_mask(land_indices) = new_values(i,:);
     withSky(:,:,i) = sky_mask;
     end
+end
+
+function withSky = backIntoImage(new_values, sky_mask)
+[n,m] = size(sky_mask);
+withSky = zeros(n,m);
+
+land_indices = find(sky_mask);
+withSky(land_indices) = new_values(:);
 end
