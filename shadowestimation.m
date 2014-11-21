@@ -5,7 +5,7 @@ function [S] = shadowestimation(images)
 %       1 -> pixel is in sunlight at this frame
 
     k = 1.5; %value from the paper
-    p = 0.25; %percent of pixels to count as "shadowed"
+    p = 0.2; %percent of pixels to count as "shadowed"
 
     [f,n] = size(images);
     num_shadowed = floor(f*p);

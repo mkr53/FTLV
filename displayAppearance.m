@@ -8,7 +8,7 @@ frames = 1:num_frames;
 
 
 pixel_200_red = (images(:,index,1));
-shadow_200 = 250 * shadows(:,index);
+shadow_200 = 100 * shadows(:,index);
 %shadow_200 = shadows(:,index);
 
 sky_index = sky(:,index); 

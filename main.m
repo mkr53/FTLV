@@ -1,4 +1,4 @@
-function [ output_args ] = main( input_args )
+function main
 
 %load matrix of image information
 if ~exist('imagematrix.mat')
@@ -9,29 +9,36 @@ else
     load('imagematrix.mat', 'images','image_size');
 end
 
+%images will be a f x (m x n) x 3 matrix where f is the number of frames and
+%mxn is the size of an image
+
 %this is our binary sky mask. we will remove sky pixels from the matrix
 %that we do calcualtions on 
 sky_mask = imresize(imread('skymask.png', 'png'),image_size);
 
+%F_t is a fxnx3 matrix where f is the number of frames and n is the number
+%of NON-SKY pixels
 F_t = removeSky(images,sky_mask);
 
 %f = # of frames
-%n = # of pixels
+%n = # of pixels (non-sky)
 [f,n] = size(F_t);
 
 %compute binary shadow estimation for each frame
-fprintf('estimating shadows');
+fprintf('estimating shadows \n');
 greyscale_images = rgb2gray(F_t);
 S = shadowestimation(greyscale_images);
 
-fprintf('factorizing F');
+%here is where we will perform the bilateral filter
+
+%factorize F(t) into Sky: W_sky and H_sky
+fprintf('factorizing F \n');
 A = double(F_t(:,:,1)');
-%factorize F(t) into Sky
 [W_sky_r,H_sky_r] = ACLS(A, (1-S)');
 
 
-W_sky_r
-size(W_sky_r)
+%next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
+
 
 %to display the image, we must replace the sky
 %frame = replaceSky(images, 256 * H_sky, sky_mask);
@@ -42,7 +49,7 @@ frame = backIntoImage(frame_r, sky_mask);
 
 I_sky = W_sky_r * H_sky_r;
 
-index = 110000;
+index = 50000;
 displayAppearance(F_t, S, I_sky', index);
 %frame
 %imshow(frame)
