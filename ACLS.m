@@ -10,82 +10,51 @@ function [W,H] = ACLS(V,C)
     % This should work on 32 and 64 bit versions of Windows, MacOS, and Linux
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
-    %load('imagematrix.mat', 'images');
-    %V = images;
+    %small matrices for testing 
     %V = randi( [0 256], 100, 500);
+    %C = randi([0 1], n, m);
+    
+    
     k = 1; %k is between 1 and 5. paper uses 1
     [n,m] = size(V);
 
     fprintf('initializing W and H')
-    [W,H] = initializeACLS(V,k);
-    
-    %confidence matrix C. this will be an input.
-    %C = randi([0 1], n, m);
+    [W,H] = initializeACLS(V,k);  
     
     %we will alternate between linear squares solves of W and H:
     %x = lsqlin(C,d,A,b)solves the linear system C*x = d in the 
     %least-squares sense, subject to A*x ? b.
     
-    A = -1 * eye(k);
-    b = zeros(k,1);
+    %not necessary in lsqnonneg
+    %A = -1 * eye(k);
+    %b = zeros(k,1);
     
+    %iterations
     its = 1;
-   
-    %we will test my implementation of confidence by being able to turn it
-    %on or off 
-   confidence = true; 
     
-    distances = zeros(its,1);
     for j = 1:its
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
-            if confidence
-                %to include confidence, we do M = C_i * H'
-                M = double(C(i,:)' .* (H'));
-                %to include confidence, we do d = C_i * V_i
-                d = double((C(i,:) .* V(i,:))');
-            else 
-                M = double(H');
-                d = double(V(i,:)');
-            end
-            x = lsqnonneg(M,d);        
-            W(i,:) = x';
+           %to include confidence, M = C_i * H' and d = C_i * V_i
+           M = double(C(i,:)' .* (H'));
+           d = double((C(i,:) .* V(i,:))');
+           
+           x = lsqnonneg(M,d);        
+           W(i,:) = x';
         end
 
         %for each column of H, solve LCLS: M = W d = v x = h
-        %M = double(W);
-       
         for i = 1:m
-            if confidence
-                %to include confidence, M = C_i * W and d = C_i * V_i
-                M = double(C(:,i) .* W);
-                d = double(C(:,i) .* V(:,i));
-            else
-                M = double(W);
-                d = double(V(:,i));
-            end
+            %to include confidence, M = C_i * W and d = C_i * V_i
+            M = double(C(:,i) .* W);
+            d = double(C(:,i) .* V(:,i));
+            
             x = lsqnonneg(M,d);
             H(:,i) = x;
         end
-
-        %check distance
-        WH = W*H;
-        
-        thing = C .* (V - WH);
-        
-        distance = reshape(thing, numel(thing), 1);
-        
-        A2 = reshape(WH',numel(WH),1); % makes column vectors
-        B2 = reshape(V',numel(V),1);
-       
-
-        %dist = sqrt(dot(A2-B2,A2-B2));
-        dist = sqrt(dot(distance,distance));
-
-        distances(j) = dist;
+   
     end
-    
-    distances
+     
 end
 
 function [W,H] = initializeACLS(V,k)

@@ -21,8 +21,9 @@ function [S] = shadowestimation(images)
     %set shadow function to one for each F(t) > k*m_min and zero otherwise
     S = zeros(f,n);
     threshold = m_min * k;
-        for i = 1:f
-            S(i,:) = images(i,:) > threshold;
-        end
+    
+    for i = 1:f
+        S(i,:) = images(i,:) > threshold;
+    end
 
 end

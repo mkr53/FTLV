@@ -13,55 +13,39 @@ end
 %that we do calcualtions on 
 sky_mask = imresize(imread('skymask.png', 'png'),image_size);
 
-no_sky_images = removeSky(images,sky_mask);
-
-images_orig = images;
-images = no_sky_images;
+F_t = removeSky(images,sky_mask);
 
 %f = # of frames
 %n = # of pixels
-[f,n] = size(images);
+[f,n] = size(F_t);
 
-fprintf('estimating shadows')
 %compute binary shadow estimation for each frame
-greyscale_images = rgb2gray(images);
+fprintf('estimating shadows');
+greyscale_images = rgb2gray(F_t);
 S = shadowestimation(greyscale_images);
-size(S)
 
-fprintf('factorizing F')
-A = double(images(:,:,1));
+fprintf('factorizing F');
+A = double(F_t(:,:,1)');
 %factorize F(t) into Sky
-[W_sky_r,H_sky_r] = ACLS(A, 1-S);
-
-A = double(images(:,:,2));
-[W_sky_g,H_sky_g] = ACLS(A, 1-S);
-
-A = double(images(:,:,3));
-[W_sky_b,H_sky_b] = ACLS(A, 1-S);
+[W_sky_r,H_sky_r] = ACLS(A, (1-S)');
 
 
-H_sky = zeros(image_size(1),image_size(2), 3);
-
-
-
-
+W_sky_r
+size(W_sky_r)
 
 %to display the image, we must replace the sky
 %frame = replaceSky(images, 256 * H_sky, sky_mask);
-frame_r = backIntoImage(H_sky_r, sky_mask) ./ 256;
-frame_g = backIntoImage(H_sky_g, sky_mask) ./ 256;
-frame_b = backIntoImage(H_sky_b, sky_mask) ./ 256;
+frame_r = W_sky_r;
+frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
+frame = backIntoImage(frame_r, sky_mask);
 
-H_sky(:,:,1) = frame_r;
-H_sky(:,:,2) = frame_g;
-H_sky(:,:,3) = frame_b;
 
-size(H_sky)
+I_sky = W_sky_r * H_sky_r;
 
-%index = 110000;
-%displayAppearance(images, S, index);
+index = 110000;
+displayAppearance(F_t, S, I_sky', index);
 %frame
-imshow(H_sky)
+%imshow(frame)
 %implay(frame)
 
 end
