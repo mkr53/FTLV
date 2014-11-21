@@ -29,6 +29,8 @@ fprintf('estimating shadows \n');
 greyscale_images = rgb2gray(F_t);
 S = shadowestimation(greyscale_images);
 
+S_mov = replaceSky(F_t, S, sky_mask);
+implay(S_mov)
 %here is where we will perform the bilateral filter
 
 %factorize F(t) into Sky: W_sky and H_sky
@@ -50,9 +52,12 @@ frame = backIntoImage(frame_r, sky_mask);
 I_sky = W_sky_r * H_sky_r;
 
 index = 50000;
-displayAppearance(F_t, S, I_sky', index);
+%displayAppearance(F_t, S, I_sky', index);
+displayAppearance(F_t, S, I_sky', 'intensity');
+
 %frame
-%imshow(frame)
+figure
+imshow(frame)
 %implay(frame)
 
 end

@@ -18,7 +18,7 @@ function [W,H] = ACLS(V,C)
     k = 1; %k is between 1 and 5. paper uses 1
     [n,m] = size(V);
 
-    fprintf('initializing W and H')
+    fprintf('initializing W and H \n')
     [W,H] = initializeACLS(V,k);  
     
     %we will alternate between linear squares solves of W and H:
@@ -29,6 +29,7 @@ function [W,H] = ACLS(V,C)
     %A = -1 * eye(k);
     %b = zeros(k,1);
     
+    fprintf('solving for W and H \n');
     %iterations
     its = 1;
     
