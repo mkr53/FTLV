@@ -26,11 +26,13 @@ threshold = m_min * k;
 for i = 1:f
     S(i,:) = images(i,:) > threshold; 
 end
+%{
 for j = 1:n
     h = fspecial('prewitt');    
     B = imfilter(S(:,j)', h);
     S(:,j) = B';
 end
+%}
 
 %edge-preserving bi-lateral filter
 %"Bilateral Filtering for Gray and Color Images" [Tomasi and Manduchi 1998]

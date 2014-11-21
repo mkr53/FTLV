@@ -10,13 +10,16 @@ function [W,H] = ACLS()
     % This should work on 32 and 64 bit versions of Windows, MacOS, and Linux
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
-    load('imagematrix.mat', 'images');
-    V = images;
-    %V = randi( [0 256], 100, 500);
-    k = 1; %k is between 1 and 5
+    %load('imagematrix.mat', 'images');
+    %V = images;
+    V = randi( [0 256], 100, 500);
+    k = 1; %k is between 1 and 5. paper uses 1
     [n,m] = size(V);
-    
+
     [W,H] = initializeACLS(V,k);
+    
+    %confidence matrix C. this will be an input.
+    C = randi([0 1], n, m);
     
     %we will alternate between linear squares solves of W and H:
     %x = lsqlin(C,d,A,b)solves the linear system C*x = d in the 
@@ -27,31 +30,47 @@ function [W,H] = ACLS()
     
     its = 1;
     
-    distances = zeros(its,1);
+   
     
+    distances = zeros(its,1);
     for j = 1:its
-        %for each row of W, solve LCLS: C=H' d = v' x = w'
-        C = double(H');
+        %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
-            d = double(V(i,:)');
-            x = lsqlin(C,d,A,b);        
+            %to include confidence, we do M = C_i * H'
+            M = double((C(i,:) .* H)');
+            %to include confidence, we do d = C_i * V_i
+            d = double((C(i,:) .* V(i,:))');
+            x = lsqlin(M,d,A,b);        
             W(i,:) = x';
         end
 
-        %for each column of H, solve LCLS: C=W d=v x=h
-        C = double(W);
+        %for each column of H, solve LCLS: M = W d = v x = h
+        %M = double(W);
+        size(W)
+        size(C(:,1))
         for i = 1:m
-            d = double(V(:,i));
-            x = lsqlin(C,d,A,b);
+            %to include confidence, M = C_i * W and d = C_i * V_i
+            M = double(C(:,i) .* W);
+            d = double(C(:,i) .* V(:,i));
+            x = lsqlin(M,d,A,b);
             H(:,i) = x;
         end
 
         %check distance
         WH = W*H;
-        A2 = reshape(WH',numel(size(WH)),1); % makes column vectors
-        B2 = reshape(V',numel(size(V)),1);
+        
+        thing = C .* (V - WH);
+        size(thing)
+        
+        A = reshape(thing, numel(thing), 1);
+        
+        A2 = reshape(WH',numel(WH),1); % makes column vectors
+        B2 = reshape(V',numel(V),1);
+       
 
-        dist = sqrt(dot(A2-B2,A2-B2));
+        %dist = sqrt(dot(A2-B2,A2-B2));
+        dist = sqrt(dot(A,A));
+
         distances(j) = dist;
     end
     
