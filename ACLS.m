@@ -29,17 +29,24 @@ function [W,H] = ACLS()
     b = zeros(k,1);
     
     its = 1;
-    
    
+    %we will test my implementation of confidence by being able to turn it
+    %on or off 
+   confidence = true; 
     
     distances = zeros(its,1);
     for j = 1:its
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
-            %to include confidence, we do M = C_i * H'
-            M = double((C(i,:) .* H)');
-            %to include confidence, we do d = C_i * V_i
-            d = double((C(i,:) .* V(i,:))');
+            if confidence 
+                %to include confidence, we do M = C_i * H'
+                M = double(C(i,:)' .* (H'));
+                %to include confidence, we do d = C_i * V_i
+                d = double((C(i,:) .* V(i,:))');
+            else 
+                M = double(H');
+                d = double(V(i,:)');
+            end
             x = lsqlin(M,d,A,b);        
             W(i,:) = x';
         end
@@ -49,9 +56,14 @@ function [W,H] = ACLS()
         size(W)
         size(C(:,1))
         for i = 1:m
-            %to include confidence, M = C_i * W and d = C_i * V_i
-            M = double(C(:,i) .* W);
-            d = double(C(:,i) .* V(:,i));
+            if confidence
+                %to include confidence, M = C_i * W and d = C_i * V_i
+                M = double(C(:,i) .* W);
+                d = double(C(:,i) .* V(:,i));
+            else
+                M = double(W);
+                d = double(V(:,i));
+            end
             x = lsqlin(M,d,A,b);
             H(:,i) = x;
         end
@@ -62,14 +74,14 @@ function [W,H] = ACLS()
         thing = C .* (V - WH);
         size(thing)
         
-        A = reshape(thing, numel(thing), 1);
+        distance = reshape(thing, numel(thing), 1);
         
         A2 = reshape(WH',numel(WH),1); % makes column vectors
         B2 = reshape(V',numel(V),1);
        
 
         %dist = sqrt(dot(A2-B2,A2-B2));
-        dist = sqrt(dot(A,A));
+        dist = sqrt(dot(distance,distance));
 
         distances(j) = dist;
     end
