@@ -25,21 +25,45 @@ F_t = removeSky(images,sky_mask);
 [f,n] = size(F_t);
 
 %compute binary shadow estimation for each frame
+%we will do this individualy for the red, green, and blue components
 fprintf('estimating shadows \n');
 greyscale_images = rgb2gray(F_t);
-S = shadowestimation(greyscale_images);
+
+[S,threshs] = shadowestimation(greyscale_images);
+[S_r, threshs_r] = shadowestimation(F_t(:,:,1));
+[S_g, threshs_g] = shadowestimation(F_t(:,:,2));
+[S_b, threshs_b] = shadowestimation(F_t(:,:,3));
+
 
 S_mov = replaceSky(F_t, S, sky_mask);
-implay(S_mov)
+
+fprintf('applying bilateral filter \n');
 %here is where we will perform the bilateral filter
+%{
+for i = 1:f
+im = S_mov(:,:,f);
+im = bilateralfilter2(im, 1);
+S_mov(:,:,f) = im;
+end
+%}
+implay(S_mov)
+
+%S_mov = reshape(S_mov, image_size(1)*image_size(2), f);
+%S_mov = permute(S_mov, [2 1]);
+
+%S = removeSky(S_mov, sky_mask);
+
 
 %factorize F(t) into Sky: W_sky and H_sky
 fprintf('factorizing F \n');
 A = double(F_t(:,:,1)');
 [W_sky_r,H_sky_r] = ACLS(A, (1-S)');
 
+I_sky = W_sky_r * H_sky_r;
+
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
+%I_sun = F_t - I_sky;
 
 
 %to display the image, we must replace the sky
@@ -49,11 +73,9 @@ frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
 frame = backIntoImage(frame_r, sky_mask);
 
 
-I_sky = W_sky_r * H_sky_r;
 
-index = 50000;
 %displayAppearance(F_t, S, I_sky', index);
-displayAppearance(F_t, S, I_sky', 'intensity');
+displayAppearance(F_t, S_r, threshs_r, I_sky', 'intensity');
 
 %frame
 figure
