@@ -1,5 +1,5 @@
 
-function [W,H] = ACLS(V,C)
+function [W,H] = ACLS(V,C, sunsky)
     %Here we use alternating constrained least squares to decompose the nxm
     %matrix V into a nxk matrix W and a kxm matrix H. 
     %The concept is to minimize the euclidean error: 

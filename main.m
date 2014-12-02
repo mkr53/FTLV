@@ -55,16 +55,20 @@ implay(S_mov)
 
 
 %factorize F(t) into Sky: W_sky and H_sky
-fprintf('factorizing F \n');
+fprintf('finding I_sky \n');
 A = double(F_t(:,:,1)');
-[W_sky_r,H_sky_r] = ACLS(A, (1-S)');
+[W_sky_r,H_sky_r] = ACLS(A, (1-S)', 'sky');
 
 I_sky = W_sky_r * H_sky_r;
 
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
-%I_sun = F_t - I_sky;
+%(clamped to 0)
 
+I_sun = max(double(F_t(:,:,1)) - double(I_sky'), 0);
+fprintf('finding I_sun \n');
+A = double(F_t(:,:,1)');
+[W_sun_r, H_sun_r] = ACLS(A, S', 'sun');
 
 %to display the image, we must replace the sky
 %frame = replaceSky(images, 256 * H_sky, sky_mask);
