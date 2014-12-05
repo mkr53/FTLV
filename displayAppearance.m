@@ -6,7 +6,7 @@ num_frames = size(images, 1);
 
 frames = 1:num_frames; 
 %index=110000;
-index = 15001;
+index = 15000;
 figure
 
 for it=1:4,
@@ -23,8 +23,8 @@ plot(frames, shadow_200, 'm')
 
 hold on;
 plot(frames, pixel_200_red,'r')
-plot(frames, pixel_200_green,'g')
-plot(frames, pixel_200_blue,'b')
+%plot(frames, pixel_200_green,'g')
+%plot(frames, pixel_200_blue,'b')
 
 plot(frames, thresh,'c')
 title(strcat('Pixel #',index,' tracked'));

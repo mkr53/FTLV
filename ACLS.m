@@ -1,5 +1,5 @@
 
-function [W,H] = ACLS(V,C, sunsky)
+function [W,H,phi] = ACLS(V,C, sunsky)
     %Here we use alternating constrained least squares to decompose the nxm
     %matrix V into a nxk matrix W and a kxm matrix H. 
     %The concept is to minimize the euclidean error: 
@@ -16,23 +16,35 @@ function [W,H] = ACLS(V,C, sunsky)
     
     
     k = 1; %k is between 1 and 5. paper uses 1
-    [n,m] = size(V);
+    
 
     fprintf('initializing W and H \n')
     [W,H] = initializeACLS(V,k);  
     
-    %we will alternate between linear squares solves of W and H:
-    %x = lsqlin(C,d,A,b)solves the linear system C*x = d in the 
-    %least-squares sense, subject to A*x ? b.
+    
     
     %not necessary in lsqnonneg
     %A = -1 * eye(k);
     %b = zeros(k,1);
     
+    if strcmp(sunsky,'sun')
+        [W,H,phi] = sun_solve(V,C,W,H);
+    elseif strcmp(sunsky,'sky')
+        [W,H,phi] = sky_solve(V,C,W,H);
+    else
+        ME = MException('Invalid input for sunsky',sunsky);
+        throw(ME)
+    end
+end
+function [W_f,H_f,phi] = sky_solve(V,C,W,H)
+    %n = # pixels ;  m = # frames 
+    [n,m] = size(V);
+    
     fprintf('solving for W and H \n');
     %iterations
     its = 1;
     
+    %we will alternate between linear squares solves of W and H:
     for j = 1:its
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
@@ -55,7 +67,57 @@ function [W,H] = ACLS(V,C, sunsky)
         end
    
     end
-     
+    
+    W_f = W;
+    H_f = H;
+    phi = zeros(n,1);
+end
+
+function [W_f,H_f,phi] = sun_solve(V,C,W,H)
+    %n = # pixels ;  m = # frames 
+    [n,m] = size(V);
+    %initialize phi, our shift map if sunsky = 'sun'
+    phi = zeros(n,1);
+
+    fprintf('solving for W and H \n');
+    %iterations
+    its = 1;
+    
+    %we will alternate between linear squares solves of W and H:
+    for j = 1:its
+        %for each row of W, solve LCLS: M = H' d = v' x = w'        
+        for i = 1:n
+           %shift entire matrix H by corresponding phi value
+           H_shift = H + phi(i,:);
+           %to include confidence, M = C_i * H_shift' and d = C_i * V_i
+           M = double(C(i,:)' .* (H_shift'));
+           d = double((C(i,:) .* V(i,:))');
+           
+           x = lsqnonneg(M,d);        
+           W(i,:) = x';
+        end
+
+        %for each column of H, solve LCLS: M = W d = v x = h
+        for i = 1:m
+            %shift entire column of V by -phi 
+            V_shift = V(:,i) - phi;
+            %to include confidence, M = C_i * W and d = C_i * V_i
+            M = double(C(:,i) .* W);
+            d = double(C(:,i) .* V_shift(:,i));
+            
+            x = lsqnonneg(M,d);
+            H(:,i) = x;
+        end
+        %now we solve for phi
+        for i = 1:n
+            myfun = @(t,phi_i)H(t + phi_i);
+            phi_i = lsqcurvefit(myfun, 0, t, V(i,:));
+            phi(i) = phi_i;
+        end
+    end
+    
+    W_f = W;
+    H_f = H;
 end
 
 function [W,H] = initializeACLS(V,k)
