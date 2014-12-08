@@ -1,35 +1,57 @@
 function main
-if ~exist('imagematrix.mat')
-    fprintf('No image matrix data found. Creating Matrix... \n')
-    [images, image_size] = matrixGenerate;
-    save('imagematrix.mat', 'images','image_size');
-else
-    fprintf('loading image matrix \n');
-    load('imagematrix.mat', 'images','image_size');
-end
+    %load matrix of image information
+    %images will be a f x (m x n) x 3 matrix where f is the number of frames and
+    %mxn is the size of an image
+    if ~exist('imagematrix.mat')
+        fprintf('No image matrix data found. Creating Matrix... \n')
+        [images, image_size] = matrixGenerate;
+        save('imagematrix.mat', 'images','image_size');
+    else
+        fprintf('loading image matrix \n');
+        load('imagematrix.mat', 'images','image_size');
+    end
 
-%images will be a f x (m x n) x 3 matrix where f is the number of frames and
-%mxn is the size of an image
+    %this is our binary sky mask. we will remove sky pixels from the matrix
+    %that we do calcualtions on 
+    sky_mask = imresize(imread('skymask.png', 'png'),image_size);
 
-%this is our binary sky mask. we will remove sky pixels from the matrix
-%that we do calcualtions on 
-sky_mask = imresize(imread('skymask.png', 'png'),image_size);
+    %F_t is a fxnx3 matrix where f is the number of frames and n is the number
+    %of NON-SKY pixels
+    F_t = removeSky(images,sky_mask);
 
-%F_t is a fxnx3 matrix where f is the number of frames and n is the number
-%of NON-SKY pixels
-F_t = removeSky(images,sky_mask);
+    %run FTLV algorithm
+    [W_sky_r, H_sky_r, S_sun_r, W_sun_r, H_sun_r, phi_r] = FTLV(F_t(:,:,1), sky_mask);
+    [W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
+    [W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
 
-[W_sky, H_sky, S_sun, W_sun, H_sun, phi] = FTLV(F_t(:,:,1), sky_mask);
+
+    %to display the image, we must replace the sky
+    frame_r = W_sky_r;
+    frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
+    frame_r = backIntoImage(frame_r, sky_mask);
+    frame_g = W_sky_g;
+    frame_g = (frame_g - min(frame_g(:))) ./ (max(frame_g(:)) - min(frame_g(:)) );
+    frame_g = backIntoImage(frame_g, sky_mask);
+    frame_b = W_sky_b;
+    frame_b = (frame_b - min(frame_b(:))) ./ (max(frame_b(:)) - min(frame_b(:)) );
+    frame_b = backIntoImage(frame_b, sky_mask);
+    frame = zeros(image_size(1),image_size(2), 3);
+    frame(:,:,1) = frame_r;
+    frame(:,:,2) = frame_g;
+    frame(:,:,3) = frame_b;
+
+
+    figure
+    imshow(frame)
 end
 
 function [W_sky, H_sky, S_sun, W_sun, H_sun, phi] = FTLV(F_t, sky_mask)
-%load matrix of image information
-
 
 %f = # of frames
 %n = # of pixels (non-sky)
 [f,n] = size(F_t);
 
+%initialize outputs
 W_sky = zeros(n,1);
 H_sky = zeros(1,f);
 S_sun = zeros(n,f);
@@ -37,21 +59,21 @@ W_sun = zeros(n,1);
 H_sun = zeros(1,f);
 phi = zeros(n,1);
 
-
+%{
 %compute binary shadow estimation for each frame
-%we will do this individualy for the red, green, and blue components
 if ~exist('shadowest.mat')
     fprintf('No shadow data found. Creating Matrix... \n')
     fprintf('estimating shadows \n');
-    %greyscale_images = rgb2gray(F_t);
     [S_r, threshs_r] = shadowestimation(F_t(:,:,1));
     save('shadowest.mat', 'S_r','threshs_r');
 else
     fprintf('loading shadow \n');
     load('shadowest.mat', 'S_r','threshs_r');
 end
+%}
 
-S = S_r;
+fprintf('estimating shadows \n');
+[S, threshs] = shadowestimation(F_t);
 
 
 S_mov = replaceSky(F_t, S, sky_mask);
@@ -83,15 +105,13 @@ end
 %w     = 5;       % bilateral filter half-width
 %sigma = [3 0.1]; % bilateral filter standard deviations
 for i = 1:f
-im = S_mov(:,:,i);
-%im = bilateralfilter2(im, 4);
+    im = S_mov(:,:,i);
 
-%im = bwmorph(im, 'majority');
-im = bwmorph(im, 'spur');
-im = bwmorph(im, 'clean');
-im = bwmorph(im, 'fill');
+    im = bwmorph(im, 'spur');
+    im = bwmorph(im, 'clean');
+    im = bwmorph(im, 'fill');
 
-S_mov(:,:,i) = im;
+    S_mov(:,:,i) = im;
 end
 
 implay(S_mov)
@@ -102,44 +122,45 @@ S = mov_to_matrix(S_mov, sky_mask);
 
 %S = removeSky(S_mov, sky_mask);
     A = double(F_t');
-
+%{
 if ~exist('skyest.mat')
     fprintf('No sky data found. Creating Matrix... \n')
     %factorize F(t) into Sky: W_sky and H_sky
     fprintf('finding I_sky \n');
     A = double(F_t');
-    [W_sky_r,H_sky_r] = ACLS(A, (1-S)', 'sky');
+    [W_sky,H_sky] = ACLS(A, (1-S)', 'sky');
 
-    I_sky = W_sky_r * H_sky_r;
-    save('skyest.mat', 'W_sky_r','H_sky_r','I_sky');
+    I_sky = W_sky * H_sky;
+    save('skyest.mat', 'W_sky','H_sky','I_sky');
 else
     fprintf('Loading sky data \n');
-    load('skyest.mat', 'W_sky_r','H_sky_r','I_sky');
+    load('skyest.mat', 'W_sky','H_sky','I_sky');
 end
+%}
+    %factorize F(t) into Sky: W_sky and H_sky
+    fprintf('finding I_sky \n');
+    A = double(F_t');
+    [W_sky,H_sky] = ACLS(A, (1-S)', 'sky');
 
+    I_sky = W_sky * H_sky;
+%{
 %use this version, to compare decomposition 
-
 NewA=A .* (1-S)';
 fprintf('size of input matrix: \n');
 size(NewA)
 [Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
+%}
 
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
 I_sun = max(double(F_t) - double(I_sky'), 0);
 fprintf('finding I_sun \n');
-%A = double(F_t(:,:,1)');
+%A = double(F_t');
 %[W_sun_r, H_sun_r, phi] = ACLS(I_sun', S', 'sun');
 
 %shift_map = backIntoImage(phi, sky_mask);
 %figure
 %imshow(shift_map)
-
-%to display the image, we must replace the sky
-%frame = replaceSky(images, 256 * H_sky, sky_mask);
-frame_r = W_sky_r;
-frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
-frame = backIntoImage(frame_r, sky_mask);
 
 %frame_r2 = Wcoeff;
 %frame_r2 = (frame_r2 - min(frame_r2(:))) ./ (max(frame_r2(:)) - min(frame_r2(:)) );
@@ -147,11 +168,10 @@ frame = backIntoImage(frame_r, sky_mask);
 
 
 %displayAppearance(F_t, S, I_sky', index);
-%displayAppearance(F_t, S_r, threshs_r, I_sky', 'intensity');
+displayAppearance(F_t, S, threshs, I_sky', 'intensity');
 
 %frame
-figure
-imshow(frame)
+
 %figure
 %imshow(frame2)
 %implay(frame)

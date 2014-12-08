@@ -10,9 +10,9 @@ index = 15000;
 figure
 
 for it=1:4,
-pixel_200_red = images(:,index,1);
-pixel_200_green = images(:,index,2);
-pixel_200_blue = images(:,index,3);
+pixel_200_red = images(:,index);
+%pixel_200_green = images(:,index,2);
+%pixel_200_blue = images(:,index,3);
 
 shadow_200 = 50 * shadows(:,index);
 thresh = threshs(:,index);
