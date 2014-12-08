@@ -78,6 +78,10 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     [n,m] = size(V);
     %initialize phi, our shift map if sunsky = 'sun'
     phi = zeros(n,1);
+    %used for phi estimation
+    x_data = 1:m;
+    myfun = @(ph,t)H(t) + ph;
+    
 
     fprintf('solving for W and H \n');
     %iterations
@@ -103,17 +107,29 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
             V_shift = V(:,i) - phi;
             %to include confidence, M = C_i * W and d = C_i * V_i
             M = double(C(:,i) .* W);
-            d = double(C(:,i) .* V_shift(:,i));
+            d = double(C(:,i) .* V_shift);
             
             x = lsqnonneg(M,d);
             H(:,i) = x;
         end
         %now we solve for phi
-        for i = 1:n
-            myfun = @(t,phi_i)H(t + phi_i);
-            phi_i = lsqcurvefit(myfun, 0, t, V(i,:));
-            phi(i) = phi_i;
-        end
+        %for i = 1:n
+            i = 50000;
+            frames = 1:m; 
+            
+            figure
+            subplot(1,1,1)
+            hold on;
+            plot(frames, (C(i,:) .* V(i,:)),'m');
+            plot(frames, H,'r');
+
+            hold off;
+            
+            options = optimoptions('lsqcurvefit', 'Display', 'off');
+            ph = lsqcurvefit(myfun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
+            phi(i) = ph;
+            ph
+        %end
     end
     
     W_f = W;
