@@ -20,11 +20,11 @@ function main
     F_t = removeSky(images,sky_mask);
 
     %run FTLV algorithm
-    [W_sky_r, H_sky_r, S_sun_r, W_sun_r, H_sun_r, phi_r] = FTLV(F_t(:,:,1), sky_mask);
-    [W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
-    [W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
+    [I_sky, W_sky_r, H_sky_r, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
+    %[W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
+    %[W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
 
-
+    %{
     %to display the image, we must replace the sky
     frame_r = W_sky_r;
     frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
@@ -43,140 +43,12 @@ function main
 
     figure
     imshow(frame)
-end
-
-function [W_sky, H_sky, S_sun, W_sun, H_sun, phi] = FTLV(F_t, sky_mask)
-
-%f = # of frames
-%n = # of pixels (non-sky)
-[f,n] = size(F_t);
-
-%initialize outputs
-W_sky = zeros(n,1);
-H_sky = zeros(1,f);
-S_sun = zeros(n,f);
-W_sun = zeros(n,1);
-H_sun = zeros(1,f);
-phi = zeros(n,1);
-
-%{
-%compute binary shadow estimation for each frame
-if ~exist('shadowest.mat')
-    fprintf('No shadow data found. Creating Matrix... \n')
-    fprintf('estimating shadows \n');
-    [S_r, threshs_r] = shadowestimation(F_t(:,:,1));
-    save('shadowest.mat', 'S_r','threshs_r');
-else
-    fprintf('loading shadow \n');
-    load('shadowest.mat', 'S_r','threshs_r');
-end
-%}
-
-fprintf('estimating shadows \n');
-[S, threshs] = shadowestimation(F_t);
-
-
-S_mov = replaceSky(F_t, S, sky_mask);
-%{
-fprintf('applying bilateral filter \n');
-if ~exist('filteredshadow.mat')
-    fprintf('No filtered shadow data found. Creating Matrix... \n')
-    fprintf('applying bilateral filter \n');
-    w     = 5;       % bilateral filter half-width
-    sigma = [3 0.1]; % bilateral filter standard deviations
-    for i = 1:f
-        
-        im = S_mov(:,:,i);
-      
-        im = bfilter2(im, w, sigma);
-        gim=round(im);
-        S_mov(:,:,i) = gim;
-    end
-
-    save('filteredshadow.mat', 'S_mov');
-else
-    fprintf('loading filtered shadow \n');
-    load('filteredshadow.mat', 'S_mov');
-end
-%}
-
-%here is where we will perform the bilateral filter
-% Set bilateral filter parameters.
-%w     = 5;       % bilateral filter half-width
-%sigma = [3 0.1]; % bilateral filter standard deviations
-for i = 1:f
-    im = S_mov(:,:,i);
-
-    im = bwmorph(im, 'spur');
-    im = bwmorph(im, 'clean');
-    im = bwmorph(im, 'fill');
-
-    S_mov(:,:,i) = im;
-end
-
-implay(S_mov)
-
-S = mov_to_matrix(S_mov, sky_mask);
-%S_mov = reshape(S_mov, image_size(1)*image_size(2), f);
-%S_mov = permute(S_mov, [2 1]);
-
-%S = removeSky(S_mov, sky_mask);
-    A = double(F_t');
-%{
-if ~exist('skyest.mat')
-    fprintf('No sky data found. Creating Matrix... \n')
-    %factorize F(t) into Sky: W_sky and H_sky
-    fprintf('finding I_sky \n');
-    A = double(F_t');
-    [W_sky,H_sky] = ACLS(A, (1-S)', 'sky');
-
-    I_sky = W_sky * H_sky;
-    save('skyest.mat', 'W_sky','H_sky','I_sky');
-else
-    fprintf('Loading sky data \n');
-    load('skyest.mat', 'W_sky','H_sky','I_sky');
-end
-%}
-    %factorize F(t) into Sky: W_sky and H_sky
-    fprintf('finding I_sky \n');
-    A = double(F_t');
-    [W_sky,H_sky] = ACLS(A, (1-S)', 'sky');
-
-    I_sky = W_sky * H_sky;
-%{
-%use this version, to compare decomposition 
-NewA=A .* (1-S)';
-fprintf('size of input matrix: \n');
-size(NewA)
-[Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
-%}
-
-
-%next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
-I_sun = max(double(F_t) - double(I_sky'), 0);
-fprintf('finding I_sun \n');
-%A = double(F_t');
-%[W_sun_r, H_sun_r, phi] = ACLS(I_sun', S', 'sun');
-
-%shift_map = backIntoImage(phi, sky_mask);
-%figure
-%imshow(shift_map)
-
-%frame_r2 = Wcoeff;
-%frame_r2 = (frame_r2 - min(frame_r2(:))) ./ (max(frame_r2(:)) - min(frame_r2(:)) );
-%frame2 = backIntoImage(frame_r2, sky_mask);
-
-
-%displayAppearance(F_t, S, I_sky', index);
-displayAppearance(F_t, S, threshs, I_sky', 'intensity');
-
-%frame
-
-%figure
-%imshow(frame2)
-%implay(frame)
+    %}
+    %displayAppearance(F_t, S_sun_r, threshs, I_sky', 'intensity');
 
 end
+
+
 
 function non_sky =  removeSky(images, sky_mask)
 %return new matrix: images matrix with all sky pixels removed
