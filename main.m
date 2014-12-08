@@ -64,19 +64,26 @@ else
     load('filteredshadow.mat', 'S_mov');
 end
 %}
-%{
+
 %here is where we will perform the bilateral filter
 % Set bilateral filter parameters.
-w     = 5;       % bilateral filter half-width
-sigma = [3 0.1]; % bilateral filter standard deviations
+%w     = 5;       % bilateral filter half-width
+%sigma = [3 0.1]; % bilateral filter standard deviations
 for i = 1:f
-im = S_mov(:,:,f);
-im = bfilter2(im, w, sigma);
-S_mov(:,:,f) = im;
+im = S_mov(:,:,i);
+%im = bilateralfilter2(im, 4);
+
+%im = bwmorph(im, 'majority');
+im = bwmorph(im, 'spur');
+im = bwmorph(im, 'clean');
+im = bwmorph(im, 'fill');
+
+S_mov(:,:,i) = im;
 end
-%}
+
 implay(S_mov)
 
+S = mov_to_matrix(S_mov, sky_mask);
 %S_mov = reshape(S_mov, image_size(1)*image_size(2), f);
 %S_mov = permute(S_mov, [2 1]);
 
@@ -98,8 +105,8 @@ else
 end
 
 %use this version, to compare decomposition 
-NewA=A .* (1-S)';
-[Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
+%NewA=A .* (1-S)';
+%[Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
 
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
@@ -118,9 +125,9 @@ frame_r = W_sky_r;
 frame_r = (frame_r - min(frame_r(:))) ./ (max(frame_r(:)) - min(frame_r(:)) );
 frame = backIntoImage(frame_r, sky_mask);
 
-frame_r2 = Wcoeff;
-frame_r2 = (frame_r2 - min(frame_r2(:))) ./ (max(frame_r2(:)) - min(frame_r2(:)) );
-frame2 = backIntoImage(frame_r2, sky_mask);
+%frame_r2 = Wcoeff;
+%frame_r2 = (frame_r2 - min(frame_r2(:))) ./ (max(frame_r2(:)) - min(frame_r2(:)) );
+%frame2 = backIntoImage(frame_r2, sky_mask);
 
 
 %displayAppearance(F_t, S, I_sky', index);
@@ -129,8 +136,8 @@ displayAppearance(F_t, S_r, threshs_r, I_sky', 'intensity');
 %frame
 figure
 imshow(frame)
-figure
-imshow(frame2)
+%figure
+%imshow(frame2)
 %implay(frame)
 
 end
@@ -141,6 +148,17 @@ function non_sky =  removeSky(images, sky_mask)
 mask = reshape(sky_mask, 1, numel(sky_mask));
 land_indices = find(mask);
 non_sky = images(:,land_indices,:);
+end
+
+function new_S = mov_to_matrix(S_mov, sky_mask)
+S_mov = permute(S_mov,[3 1 2]);
+[f,n,m] = size(S_mov);
+S_mov = reshape(S_mov, f, (n*m));
+mask = reshape(sky_mask, 1, numel(sky_mask));
+
+land_indices = find(mask);
+new_S = round(S_mov(:,land_indices));
+
 end
 
 function withSky = replaceSky(images, new_values, sky_mask)
