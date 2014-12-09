@@ -18,12 +18,27 @@ function main
     %F_t is a fxnx3 matrix where f is the number of frames and n is the number
     %of NON-SKY pixels
     F_t = removeSky(images,sky_mask);
+    [f,n,d] = size(F_t);
 
     %run FTLV algorithm
     [I_sky, W_sky_r, H_sky_r, I_sun, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
     %[W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
     %[W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
-
+    
+    frame_r = W_sun_r;
+    frame_r = backIntoImage(frame_r, sky_mask);
+    figure
+    subplot(3,1,1)
+    imshow(frame_r);
+    
+    phis_r = phi_r;
+    phis_r = backIntoImage(phis_r, sky_mask);
+    subplot(3,1,2);
+    imshow(phis_r);
+    
+    frames = 1:f;
+    subplot(3,1,3);
+    plot(frames, H_sun_r, 'c');
     %{
     %to display the image, we must replace the sky
     frame_r = W_sky_r;
@@ -44,7 +59,7 @@ function main
     figure
     imshow(frame)
     %}
-    %displayAppearance(F_t, S_sun_r, threshs, I_sky', 'intensity');
+    displayAppearance(F_t, S_sun_r, threshs, I_sky',I_sun', 'intensity');
 
 end
 

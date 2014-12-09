@@ -84,7 +84,7 @@ function [W_f,H_f,phi] = sky_solve(V,C,W,H)
     NewA = V .* C;
     [Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
     
-    i = round(n/3);
+    i = round(n/3) + 7;
         figure
         for it = 1:4
             frames = 1:m; 
@@ -159,7 +159,7 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
          phi = calculatePhi(V,H,n);
          
          
-        i = round(n/3);
+        i = round(n/3) + 7;
         figure
         for it = 1:4
             frames = 1:m; 

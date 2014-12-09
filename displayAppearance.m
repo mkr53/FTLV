@@ -1,4 +1,4 @@
-function displayAppearance(images, shadows , threshs, sky, ylabeltitle)
+function displayAppearance(images, shadows , threshs, sky, sun, ylabeltitle)
 
 %images
 
@@ -10,9 +10,8 @@ index = 15000;
 figure
 
 for it=1:4,
-pixel_200_red = images(:,index);
-%pixel_200_green = images(:,index,2);
-%pixel_200_blue = images(:,index,3);
+pixel = images(:,index);
+
 
 shadow_200 = 50 * shadows(:,index);
 thresh = threshs(:,index);
@@ -22,15 +21,35 @@ subplot(2,2,it)
 plot(frames, shadow_200, 'm')
 
 hold on;
-plot(frames, pixel_200_red,'r')
-%plot(frames, pixel_200_green,'g')
-%plot(frames, pixel_200_blue,'b')
-
+plot(frames, pixel,'r')
 plot(frames, thresh,'c')
 title(strcat('Pixel #',index,' tracked'));
 xlabel('time');
 ylabel(ylabeltitle);
-%plot(frames, sky_index, 'y')
+hold off;
+index=index+25000;
+end
+
+index = 15000;
+figure
+for it=1:4,
+pixel = images(:,index);
+
+sky_index = sky(:,index);
+sun_index = sun(:,index);
+thresh = threshs(:,index);
+
+
+subplot(2,2,it)
+plot(frames, pixel, 'r')
+
+hold on;
+plot(frames, thresh, 'b');
+plot(frames, sky,'c')
+plot(frames, sun,'y')
+title(strcat('Pixel #',index,' tracked'));
+xlabel('time');
+ylabel(ylabeltitle);
 hold off;
 index=index+25000;
 end

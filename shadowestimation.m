@@ -23,8 +23,15 @@ function [S, threshold] = shadowestimation(images, skymask)
     S = zeros(f,n);
     threshold = m_min .* k;
     
+    y = zeros(f,n);
+    for i = 1:n
+        pixel = images(:,i);
+        y(:,i) = smooth(double(pixel), 'sgolay');
+    end
+    
     for i = 1:f
-        S(i,:) = images(i,:) > threshold;
+        %S(i,:) = images(i,:) > threshold;
+        S(i,:) = y(i,:) > threshold;
     end
     
     %display stuff
