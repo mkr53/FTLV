@@ -5,9 +5,10 @@ function [I_sky, W_sky, H_sky, I_sun, S, W_sun, H_sun, phi, threshs] = FTLV(F_t,
 [f,n] = size(F_t);
 
 %initialize outputs
+I_sky = zeros(n,f);
+I_sun = zeros(n,f);
 W_sky = zeros(n,1);
 H_sky = zeros(1,f);
-S_sun = zeros(n,f);
 W_sun = zeros(n,1);
 H_sun = zeros(1,f);
 phi = zeros(n,1);
@@ -58,11 +59,11 @@ size(NewA)
   
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
-I_sun = max(double(F_t) - double(I_sky'), 0);
 
 if ~exist('sunest.mat')
         fprintf('No sun data found. Factorizing Matrix... \n')
         fprintf('finding I_sun \n');
+        I_sun = max(double(F_t) - double(I_sky'), 0);
         [W_sun, H_sun, phi] = ACLS(I_sun', S', 'sun');
 
         save('sunest.mat', 'W_sun','H_sun', 'phi');
@@ -73,12 +74,13 @@ end
 
    %construct the I_sun matrix (for loops because shift map makes working with
         %matrices complicated)
+        %THIS TAKES A REALLY LONG TIME... FIX IT?
         for i = 1:n
+            i
             w = W_sun(i,:);
             for j = 1:f
-                class(j)
-                shifted_index = round(max(j + phi(i,:),0));
-                class(shifted_index)
+                j
+                shifted_index = min(max(j + phi(i,:),1),f);
                 I_sun(j,i) = w * H_sun(:,shifted_index);
             end
         end
@@ -86,16 +88,6 @@ end
 I_sun = max(double(F_t) - double(I_sky'), 0);
 fprintf('finding I_sun \n');
 [W_sun, H_sun, phi] = ACLS(I_sun', S', 'sun');
-
-%construct the I_sun matrix (for loops because shift map makes working with
-%matrices complicated)
-for i = 1:n
-    w = W_sun(round(i),:);
-    for j = 1:f
-        I_sun(j,i) = w * H_sun(:,round(j + phi(i,:)));
-    end
-end
 %}
-
 
 end
