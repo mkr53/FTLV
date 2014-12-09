@@ -11,11 +11,22 @@ function [W,H,phi] = ACLS(V,C, sunsky)
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
     %small matrices for testing 
+   %{
+    fun = @(x)x*x;
+    x = 100;
+    z = 50;
+    temp = zeros(x,z);
+    begin_matrix = linspace(1,10,x);
+    for g = 1:z
+        temp(:,g) = begin_matrix;
+    end
     
-    %V = randi( [0 256], 100, 500);
-    %[n,m] = size(V);
-    %C = randi([0 1], n, m);
-    %sunsky= 'sun'
+    V = arrayfun(fun, temp);
+    %V = randi( [0 256], 10, 50);
+    [n,m] = size(V);
+    C = randi([0 1], n, m);
+    sunsky= 'sky'
+    %}
     
     k = 1; %k is between 1 and 5. paper uses 1
     
@@ -69,6 +80,24 @@ function [W_f,H_f,phi] = sky_solve(V,C,W,H)
         end
    
     end
+    %test against other decomposer    
+    NewA = V .* C;
+    [Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
+    
+    i = round(n/3);
+        figure
+        for it = 1:4
+            frames = 1:m; 
+            
+            subplot(2,2,it)
+            hold on;
+            plot(frames, (C(i,:) .* V(i,:)),'m');
+            plot(frames, (W(i,:) * H),'r');
+            plot(frames, (Wcoeff(i,:) * Hbasis), 'c');
+
+            i = i + round(n/8);
+        end
+    
     
     W_f = W;
     H_f = H;
@@ -84,7 +113,9 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     x_data = 1:m;
     myfun = @(ph,t)H(round(t + ph));
     
-    %phi = calculatePhi(phi, C,V,x_data, myfun, n);
+    %phi = calculatePhi(phi,C,V,H,n,m);
+     phi = calculatePhi(V,H,n);
+
 
     
     fprintf('solving for W and H \n');
@@ -125,23 +156,31 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
             H(:,i) = x;
         end
         %now we solve for phi
-        %for i = 1:n
-            i = round(n/2);
+         phi = calculatePhi(V,H,n);
+         
+         
+        i = round(n/3);
+        figure
+        for it = 1:4
             frames = 1:m; 
+            shift_frames = (1 + phi(i)):(m + phi(i));
             
-            figure
-            subplot(1,1,1)
+            subplot(2,2,it)
             hold on;
             plot(frames, (C(i,:) .* V(i,:)),'m');
             plot(frames, (W(i,:) * H),'r');
+            plot(shift_frames, (W(i,:) * H),'c');
 
-            hold off;
-            
+        
+            %{ 
             options = optimoptions('lsqcurvefit', 'Display', 'off');
             ph = lsqcurvefit(myfun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
             phi(i) = ph;
             ph
-        %end
+            %}
+            i = i + round(n/8);
+        end
+        
     end
     
     W_f = W;
@@ -162,14 +201,29 @@ function [W,H] = initializeACLS(V,k)
 
     W = double(reshape(datasample(centers_vector,(n*k)), n, k));
     H = double(reshape(datasample(centers_vector, k*m),k,m));
-end 
+end
 
-function phi_n = calculatePhi(phi, C,V,x_data, my_fun, n)
+function phi_n = calculatePhi(V,H,n)
+phi_n = zeros(n,1);
+    for i = 1:n
+        [r,lag] = xcorr(V(i,:), H);
+        [~,I] = max(abs(r));
+        lagDiff = lag(I);
+        phi_n(i) = lagDiff;
+    end
+end
+
+function phi_n = calculatePhi_o(phi,C,V,H,n,m)
+    %used for phi estimation
+    x_data = 1:m;
+    my_fun = @(ph,t)H(round(t + ph));
     
     for i = 1:n
         options = optimoptions('lsqcurvefit', 'Display', 'off');
         ph = lsqcurvefit(my_fun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
         phi(i) = ph;
+        
     end
+    
     phi_n = phi;
 end

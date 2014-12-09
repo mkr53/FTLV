@@ -23,30 +23,9 @@ function [S, threshold] = shadowestimation(images, skymask)
     S = zeros(f,n);
     threshold = m_min .* k;
     
-    
     for i = 1:f
         S(i,:) = images(i,:) > threshold;
     end
-    
-    % perform bilateral filtering
-    %create a m x n x f matrix S_mov
-    S_mov = replace_sky(S,skymask);
-    
-    for i = 1:f
-        im = S_mov(:,:,i);
-
-        im = bwmorph(im, 'spur');
-        im = bwmorph(im, 'clean');
-        im = bwmorph(im, 'fill');
-
-        S_mov(:,:,i) = im;
-    end
-    
-    %filter pixel value over time 
-    a = [1 0.2];
-    b = [2 3];
-    
-    
     
     %display stuff
     frames = 1:f; 
