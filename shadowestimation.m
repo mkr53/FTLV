@@ -28,7 +28,7 @@ function [S, threshold] = shadowestimation(images)
     
     for i = 1:n
         pixel = images(:,i);
-        smimages(fr,:) = smooth(double(pixel),80, 'sgolay',1);
+        smimages(:,i) = smooth(double(pixel),61, 'sgolay',1);
     end
     
     for i = 1:f

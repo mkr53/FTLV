@@ -127,7 +127,8 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
            %shift entire matrix H by corresponding phi value
-           H_shift = circshift(H,[phi(i,:),0]);
+           %H_shift = circshift(H,[phi(i,:),0]);
+           H_shift = shiftByPhi(H, phi(i,:));
            %to include confidence, M = C_i * H_shift' and d = C_i * V_i
            M = double(C(i,:)' .* (H_shift'));
            d = double((C(i,:) .* V(i,:))');
@@ -226,4 +227,11 @@ function phi_n = calculatePhi_o(phi,C,V,H,n,m)
     end
     
     phi_n = phi;
+end
+
+function H_shift = shiftByPhi(H,phi)
+H_shift = zeros(1,f);
+shifted_indices = max(1 + phi , 1) : min(f + phi, f);
+H_indices = [H ; shifted_indices];
+H_shift(H_indices(2,:)) = H_indices(1,:);
 end

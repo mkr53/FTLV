@@ -23,7 +23,7 @@ function main
     [f,n,d] = size(F_t);
 
     %run FTLV algorithm
-    [I_sky, W_sky_r, H_sky_r, I_sun, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
+    [I_sky, W_sky_r, H_sky_r, I_sun, S_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
     %[W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
     %[W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
     
@@ -37,17 +37,20 @@ function main
     frame_r = W_sun_r;
     frame_r = backIntoImage(frame_r, sky_mask);
     figure
-    subplot(3,1,1)
     imshow(frame_r);
     
     phis_r = phi_r;
     phis_r = backIntoImage(phis_r, sky_mask);
-    subplot(3,1,2);
+    figure
     imshow(phis_r);
     
     frames = 1:f;
-    subplot(3,1,3);
+    figure
     plot(frames, H_sun_r, 'c');
+    
+    S_mov = replaceSky(S_r, sky_mask);
+    figure
+    implay(S_mov)
     %{
     %to display the image, we must replace the sky
     frame_r = W_sky_r;
@@ -68,7 +71,7 @@ function main
     figure
     imshow(frame)
     %}
-    displayAppearance(F_t, S_sun_r, threshs, I_sky',I_sun', 'intensity');
+    %displayAppearance(F_t, S_sun_r, threshs, I_sky',I_sun, 'intensity');
 
 end
 
@@ -93,7 +96,7 @@ new_S = round(S_mov(:,land_indices));
 
 end
 
-function withSky = replaceSky(images, new_values, sky_mask)
+function withSky = replaceSky(new_values, sky_mask)
 [n,m] = size(sky_mask);
 f = size(new_values, 1);
 withSky = zeros(n,m,f);

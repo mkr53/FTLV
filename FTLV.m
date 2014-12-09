@@ -59,11 +59,12 @@ size(NewA)
   
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
+        I_sun = max(double(F_t) - double(I_sky'), 0);
+
 
 if ~exist('sunest.mat')
         fprintf('No sun data found. Factorizing Matrix... \n')
         fprintf('finding I_sun \n');
-        I_sun = max(double(F_t) - double(I_sky'), 0);
         [W_sun, H_sun, phi] = ACLS(I_sun', S', 'sun');
 
         save('sunest.mat', 'W_sun','H_sun', 'phi');
@@ -75,7 +76,8 @@ end
    %construct the I_sun matrix (for loops because shift map makes working with
         %matrices complicated)
         %THIS TAKES A REALLY LONG TIME... FIX IT?
-        for i = 1:n
+      %{  
+          for i = 1:n
             i
             w = W_sun(i,:);
             for j = 1:f
@@ -83,7 +85,10 @@ end
                 shifted_index = min(max(j + phi(i,:),1),f);
                 I_sun(j,i) = w * H_sun(:,shifted_index);
             end
-        end
+      
+
+            end
+         %}
 %{
 I_sun = max(double(F_t) - double(I_sky'), 0);
 fprintf('finding I_sun \n');
@@ -91,3 +96,4 @@ fprintf('finding I_sun \n');
 %}
 
 end
+
