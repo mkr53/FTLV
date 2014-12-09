@@ -11,9 +11,11 @@ function [W,H,phi] = ACLS(V,C, sunsky)
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
     %small matrices for testing 
-    %V = randi( [0 256], 100, 500);
-    %C = randi([0 1], n, m);
     
+    %V = randi( [0 256], 100, 500);
+    %[n,m] = size(V);
+    %C = randi([0 1], n, m);
+    %sunsky= 'sun'
     
     k = 1; %k is between 1 and 5. paper uses 1
     
@@ -80,9 +82,11 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     phi = zeros(n,1);
     %used for phi estimation
     x_data = 1:m;
-    myfun = @(ph,t)H(t) + ph;
+    myfun = @(ph,t)H(round(t + ph));
     
+    %phi = calculatePhi(phi, C,V,x_data, myfun, n);
 
+    
     fprintf('solving for W and H \n');
     %iterations
     its = 1;
@@ -92,7 +96,7 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
            %shift entire matrix H by corresponding phi value
-           H_shift = H + phi(i,:);
+           H_shift = circshift(H,[phi(i,:),0]);
            %to include confidence, M = C_i * H_shift' and d = C_i * V_i
            M = double(C(i,:)' .* (H_shift'));
            d = double((C(i,:) .* V(i,:))');
@@ -104,7 +108,15 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         %for each column of H, solve LCLS: M = W d = v x = h
         for i = 1:m
             %shift entire column of V by -phi 
-            V_shift = V(:,i) - phi;
+            %V_shift = V(:,i) - phi;
+            V_shift = zeros(n,1);
+            for d = 1:n 
+                %new column to grab data from(clamped between 1 and m) 
+                k = max(min((i - phi(d)),m),1);
+                V_shift(d) = V(d,k);
+               
+            end
+           
             %to include confidence, M = C_i * W and d = C_i * V_i
             M = double(C(:,i) .* W);
             d = double(C(:,i) .* V_shift);
@@ -114,14 +126,14 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         end
         %now we solve for phi
         %for i = 1:n
-            i = 50000;
+            i = round(n/2);
             frames = 1:m; 
             
             figure
             subplot(1,1,1)
             hold on;
             plot(frames, (C(i,:) .* V(i,:)),'m');
-            plot(frames, H,'r');
+            plot(frames, (W(i,:) * H),'r');
 
             hold off;
             
@@ -151,3 +163,13 @@ function [W,H] = initializeACLS(V,k)
     W = double(reshape(datasample(centers_vector,(n*k)), n, k));
     H = double(reshape(datasample(centers_vector, k*m),k,m));
 end 
+
+function phi_n = calculatePhi(phi, C,V,x_data, my_fun, n)
+    
+    for i = 1:n
+        options = optimoptions('lsqcurvefit', 'Display', 'off');
+        ph = lsqcurvefit(my_fun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
+        phi(i) = ph;
+    end
+    phi_n = phi;
+end

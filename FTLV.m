@@ -58,7 +58,8 @@ end
 
 %}
 %S = mov_to_matrix(S_mov, sky_mask);
-
+%S_mov = reshape(S_mov, image_size(1)*image_size(2), f);
+%S_mov = permute(S_mov, [2 1]);
 
 %S = removeSky(S_mov, sky_mask);
     %A = double(F_t');
@@ -95,8 +96,7 @@ size(NewA)
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
 I_sun = max(double(F_t) - double(I_sky'), 0);
 fprintf('finding I_sun \n');
-%A = double(F_t');
-%[W_sun_r, H_sun_r, phi] = ACLS(I_sun', S', 'sun');
+[W_sun_r, H_sun_r, phi] = ACLS(I_sun', S', 'sun');
 
 
 
