@@ -20,7 +20,7 @@ function main
     F_t = removeSky(images,sky_mask);
 
     %run FTLV algorithm
-    [I_sky, W_sky_r, H_sky_r, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
+    [I_sky, W_sky_r, H_sky_r, I_sun, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
     %[W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
     %[W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
 

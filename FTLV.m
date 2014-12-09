@@ -1,4 +1,4 @@
-function [I_sky, W_sky, H_sky, S, W_sun, H_sun, phi, threshs] = FTLV(F_t, sky_mask)
+function [I_sky, W_sky, H_sky, I_sun, S, W_sun, H_sun, phi, threshs] = FTLV(F_t, sky_mask)
 
 %f = # of frames
 %n = # of pixels (non-sky)
@@ -56,14 +56,12 @@ for i = 1:f
     S_mov(:,:,i) = im;
 end
 
-implay(S_mov)
 %}
 %S = mov_to_matrix(S_mov, sky_mask);
-%S_mov = reshape(S_mov, image_size(1)*image_size(2), f);
-%S_mov = permute(S_mov, [2 1]);
+
 
 %S = removeSky(S_mov, sky_mask);
-    A = double(F_t');
+    %A = double(F_t');
 %{
 if ~exist('skyest.mat')
     fprintf('No sky data found. Creating Matrix... \n')
@@ -100,21 +98,6 @@ fprintf('finding I_sun \n');
 %A = double(F_t');
 %[W_sun_r, H_sun_r, phi] = ACLS(I_sun', S', 'sun');
 
-%shift_map = backIntoImage(phi, sky_mask);
-%figure
-%imshow(shift_map)
 
-%frame_r2 = Wcoeff;
-%frame_r2 = (frame_r2 - min(frame_r2(:))) ./ (max(frame_r2(:)) - min(frame_r2(:)) );
-%frame2 = backIntoImage(frame_r2, sky_mask);
-
-
-%displayAppearance(F_t, S, I_sky', index);
-
-%frame
-
-%figure
-%imshow(frame2)
-%implay(frame)
 
 end

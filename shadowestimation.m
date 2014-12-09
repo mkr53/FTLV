@@ -42,13 +42,23 @@ function [S, threshold] = shadowestimation(images, skymask)
         S_mov(:,:,i) = im;
     end
     
+    %filter pixel value over time 
+    a = [1 0.2];
+    b = [2 3];
+    
+    
+    
     %display stuff
     frames = 1:f; 
     index = 15000;
     figure
 
     for it=1:4
+
         pixel = images(:,index);
+        %y = filter(b,a,double(pixel));
+         y = smooth(double(pixel), 'sgolay');
+
 
         shadow = 50 * S(:,index);
         thresh = threshold(:,index);
@@ -58,6 +68,7 @@ function [S, threshold] = shadowestimation(images, skymask)
         hold on;
         plot(frames, pixel,'r')
         plot(frames, thresh,'c')
+        plot(frames, y)
         
         title(strcat('Pixel #',index,' tracked'));
         xlabel('time');
