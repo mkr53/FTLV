@@ -15,7 +15,7 @@ phi = zeros(n,1);
 if ~exist('shadowest.mat')
         fprintf('No shadow data found. Creating Matrix... \n')
         fprintf('estimating shadows \n');
-        [S, threshs] = shadowestimation(F_t, sky_mask);
+        [S, threshs] = shadowestimation(F_t);
         save('shadowest.mat', 'S','threshs');
     else
         fprintf('loading shadow matrix \n');
@@ -59,10 +59,43 @@ size(NewA)
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
 I_sun = max(double(F_t) - double(I_sky'), 0);
+
+if ~exist('sunest.mat')
+        fprintf('No sun data found. Factorizing Matrix... \n')
+        fprintf('finding I_sun \n');
+        [W_sun, H_sun, phi] = ACLS(I_sun', S', 'sun');
+
+        save('sunest.mat', 'W_sun','H_sun', 'phi');
+    else
+        fprintf('loading sun decomposition \n');
+        load('sunest.mat', 'W_sun','H_sun', 'phi');
+end
+
+   %construct the I_sun matrix (for loops because shift map makes working with
+        %matrices complicated)
+        for i = 1:n
+            w = W_sun(i,:);
+            for j = 1:f
+                class(j)
+                shifted_index = round(max(j + phi(i,:),0));
+                class(shifted_index)
+                I_sun(j,i) = w * H_sun(:,shifted_index);
+            end
+        end
+%{
+I_sun = max(double(F_t) - double(I_sky'), 0);
 fprintf('finding I_sun \n');
 [W_sun, H_sun, phi] = ACLS(I_sun', S', 'sun');
 
-
+%construct the I_sun matrix (for loops because shift map makes working with
+%matrices complicated)
+for i = 1:n
+    w = W_sun(round(i),:);
+    for j = 1:f
+        I_sun(j,i) = w * H_sun(:,round(j + phi(i,:)));
+    end
+end
+%}
 
 
 end

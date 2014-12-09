@@ -2,6 +2,8 @@ function main
     %load matrix of image information
     %images will be a f x (m x n) x 3 matrix where f is the number of frames and
     %mxn is the size of an image
+    
+    %NOTE: to load new data set, you must delete imagematrix.mat
     if ~exist('imagematrix.mat')
         fprintf('No image matrix data found. Creating Matrix... \n')
         [images, image_size] = matrixGenerate;
@@ -24,6 +26,13 @@ function main
     [I_sky, W_sky_r, H_sky_r, I_sun, S_sun_r, W_sun_r, H_sun_r, phi_r, threshs] = FTLV(F_t(:,:,1), sky_mask);
     %[W_sky_g, H_sky_g, S_sun_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2), sky_mask);
     %[W_sky_b, H_sky_b, S_sun_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3), sky_mask);
+    
+    %normalize phi for visualizing
+    if min(phi_r) < 0
+        phi_r = phi_r - min(phi_r(:));
+    end
+    phi_r = (phi_r - min(phi_r(:))) ./ (max(phi_r(:)) - min(phi_r(:)));
+
     
     frame_r = W_sun_r;
     frame_r = backIntoImage(frame_r, sky_mask);

@@ -1,4 +1,4 @@
-function [S, threshold] = shadowestimation(images, skymask)
+function [S, threshold] = shadowestimation(images)
 
 %   output: f x n matrix of binary values.
 %       0 -> pixel is in shadow at this frame.
@@ -23,15 +23,17 @@ function [S, threshold] = shadowestimation(images, skymask)
     S = zeros(f,n);
     threshold = m_min .* k;
     
-    y = zeros(f,n);
+    %smoothed images
+    smimages=zeros(f,n);
+    
     for i = 1:n
         pixel = images(:,i);
-        y(:,i) = smooth(double(pixel), 'sgolay');
+        smimages(fr,:) = smooth(double(pixel),80, 'sgolay',1);
     end
     
     for i = 1:f
         %S(i,:) = images(i,:) > threshold;
-        S(i,:) = y(i,:) > threshold;
+        S(i,:) = smimages(i,:) > threshold;
     end
     
     %display stuff
@@ -43,18 +45,16 @@ function [S, threshold] = shadowestimation(images, skymask)
 
         pixel = images(:,index);
         %y = filter(b,a,double(pixel));
-         y = smooth(double(pixel), 'sgolay');
 
 
         shadow = 50 * S(:,index);
         thresh = threshold(:,index);
 
         subplot(2,2,it)
-        plot(frames, shadow, 'm')
+        plot(frames, shadow, 'b')
         hold on;
         plot(frames, pixel,'r')
         plot(frames, thresh,'c')
-        plot(frames, y)
         
         title(strcat('Pixel #',index,' tracked'));
         xlabel('time');
@@ -63,15 +63,4 @@ function [S, threshold] = shadowestimation(images, skymask)
         index=index+25000;
     end
 
-end
-
-function withSky = replace_sky(new_values,sky_mask)
-[n,m] = size(sky_mask);
-f = size(new_values, 1);
-withSky = zeros(n,m,f);
-land_indices = find(sky_mask);
-    for i = 1:f
-    sky_mask(land_indices) = new_values(i,:);
-    withSky(:,:,i) = sky_mask;
-    end
 end
