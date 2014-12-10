@@ -1,5 +1,5 @@
 
-function [W,H,phi] = ACLS()%V,C, sunsky)
+function [W,H,phi] = ACLS(V,C, sunsky)
     %Here we use alternating constrained least squares to decompose the nxm
     %matrix V into a nxk matrix W and a kxm matrix H. 
     %The concept is to minimize the euclidean error: 
@@ -11,23 +11,14 @@ function [W,H,phi] = ACLS()%V,C, sunsky)
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
     %small matrices for testing 
-   
-    fun = @(x)x*x;
-    x = 100;
-    z = 50;
-    temp = zeros(x,z);
-    begin_matrix = linspace(1,10,x);
-    for g = 1:z
-        temp(:,g) = begin_matrix;
-    end
-    
+    %{
     %V = arrayfun(fun, temp);
     V = randi( [0 256], 10, 50);
     [n,m] = size(V);
     C = randi([0 1], n, m);
     sunsky= 'sun'
     
-    
+    %}
     k = 1; %k is between 1 and 5. paper uses 1
     
     fprintf('initializing W and H \n')
@@ -92,7 +83,7 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     myfun = @(ph,t)H(round(t + ph));
     
     %phi = calculatePhi(phi,C,V,H,n,m);
-     phi = calculatePhi(V,H,n);
+     phi = calculatePhi(V,H,n,m);
 
 
     
@@ -137,7 +128,7 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         
         fprintf('optimizing phi \n');
         %now we solve for phi
-         phi = calculatePhi(V,H,n);
+         phi = calculatePhi(V,H,n,m);
         
     end
     
@@ -151,7 +142,7 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     for it = 1:2
         shifted_frames = frames - phi(i,:);
 
-        phi(i,:)
+        phi(i,:);
         plot(frames, C(i,:) .* V(i,:),colors(2 + it));
         
         plot(shifted_frames, C(i,:) .* V(i,:),colors(it));
@@ -179,14 +170,22 @@ function [W,H] = initializeACLS(V,k)
     H = double(reshape(datasample(centers_vector, k*m),k,m));
 end
 
-function phi_n = calculatePhi(V,H,n)
+function phi_n = calculatePhi(V,H,n,f)
 phi_n = zeros(n,1);
     for i = 1:n
         [r,lag] = xcorr(V(i,:), H);
         [~,I] = max(abs(r));
         lagDiff = lag(I);
-        phi_n(i) = -1 * lagDiff;
+        phi_n(i) = lagDiff;
     end
+    frames = 1:f;
+    figure
+    plot(frames, V(10,:), 'r');
+    hold on;
+    plot(frames, H, 'g');
+    plot(frames, shiftByPhi(H,phi_n(10),f), 'b');
+    phi_n(10)
+
 end
 
 function phi_n = calculatePhi_o(phi,C,V,H,n,m)
