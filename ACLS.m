@@ -21,11 +21,11 @@ function [W,H,phi] = ACLS(V,C, sunsky)
         temp(:,g) = begin_matrix;
     end
     
-    V = arrayfun(fun, temp);
-    %V = randi( [0 256], 10, 50);
+    %V = arrayfun(fun, temp);
+    V = randi( [0 256], 10, 50);
     [n,m] = size(V);
     C = randi([0 1], n, m);
-    sunsky= 'sky'
+    sunsky= 'sun'
     %}
     
     k = 1; %k is between 1 and 5. paper uses 1
@@ -124,11 +124,12 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
     
     %we will alternate between linear squares solves of W and H:
     for j = 1:its
+        fprintf('optimizing W \n');
         %for each row of W, solve LCLS: M = H' d = v' x = w'        
         for i = 1:n
            %shift entire matrix H by corresponding phi value
            %H_shift = circshift(H,[phi(i,:),0]);
-           H_shift = shiftByPhi(H, phi(i,:));
+           H_shift = shiftByPhi(H, phi(i,:),m);
            %to include confidence, M = C_i * H_shift' and d = C_i * V_i
            M = double(C(i,:)' .* (H_shift'));
            d = double((C(i,:) .* V(i,:))');
@@ -136,17 +137,16 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
            x = lsqnonneg(M,d);        
            W(i,:) = x';
         end
-
+        
+        fprintf('optimizing H \n');
         %for each column of H, solve LCLS: M = W d = v x = h
         for i = 1:m
             %shift entire column of V by -phi 
-            %V_shift = V(:,i) - phi;
             V_shift = zeros(n,1);
             for d = 1:n 
                 %new column to grab data from(clamped between 1 and m) 
-                k = max(min((i - phi(d)),m),1);
+                k = max(min((i + phi(d)),m),1);
                 V_shift(d) = V(d,k);
-               
             end
            
             %to include confidence, M = C_i * W and d = C_i * V_i
@@ -156,23 +156,26 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
             x = lsqnonneg(M,d);
             H(:,i) = x;
         end
+        
+        fprintf('optimizing phi \n');
         %now we solve for phi
          phi = calculatePhi(V,H,n);
          
          
         i = round(n/3) + 7;
+        frames = 1:m; 
+
         figure
+            hold on;
+            plot(frames,H,'m');
+        
         for it = 1:4
-            frames = 1:m; 
             shift_frames = (1 + phi(i)):(m + phi(i));
             
-            subplot(2,2,it)
-            hold on;
-            plot(frames, (C(i,:) .* V(i,:)),'m');
-            plot(frames, (W(i,:) * H),'r');
-            plot(shift_frames, (W(i,:) * H),'c');
+            
+            plot(shift_frames, (C(i,:) .* V(i,:)),'r');
+            %plot(shift_frames, (W(i,:) * H),'c');
 
-        
             %{ 
             options = optimoptions('lsqcurvefit', 'Display', 'off');
             ph = lsqcurvefit(myfun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
@@ -229,9 +232,8 @@ function phi_n = calculatePhi_o(phi,C,V,H,n,m)
     phi_n = phi;
 end
 
-function H_shift = shiftByPhi(H,phi)
+function H_shift = shiftByPhi(H,phi,f)
 H_shift = zeros(1,f);
 shifted_indices = max(1 + phi , 1) : min(f + phi, f);
-H_indices = [H ; shifted_indices];
-H_shift(H_indices(2,:)) = H_indices(1,:);
+H_shift(shifted_indices) = H(:,1:numel(shifted_indices));
 end

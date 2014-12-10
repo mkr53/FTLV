@@ -51,6 +51,10 @@ function main
     S_mov = replaceSky(S_r, sky_mask);
     figure
     implay(S_mov)
+    
+    sky_frame = backIntoImage(W_sky_r,sky_mask);
+    figure
+    imshow(sky_frame)
     %{
     %to display the image, we must replace the sky
     frame_r = W_sky_r;

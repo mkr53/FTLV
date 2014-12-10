@@ -59,8 +59,7 @@ size(NewA)
   
 
 %next, we factorize F(t) - I(sky) = I(sun) into its W_sun and H_sun parts
-        I_sun = max(double(F_t) - double(I_sky'), 0);
-
+I_sun = max(double(F_t) - double(I_sky'), 0);
 
 if ~exist('sunest.mat')
         fprintf('No sun data found. Factorizing Matrix... \n')
@@ -72,8 +71,9 @@ if ~exist('sunest.mat')
         fprintf('loading sun decomposition \n');
         load('sunest.mat', 'W_sun','H_sun', 'phi');
 end
-
-   %construct the I_sun matrix (for loops because shift map makes working with
+    
+    fprintf('FTLV complete \n');
+   %construct the I_sun matrix (nested for loops because shift map makes working with
         %matrices complicated)
         %THIS TAKES A REALLY LONG TIME... FIX IT?
       %{  
