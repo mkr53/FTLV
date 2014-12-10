@@ -43,7 +43,7 @@ function [S, threshold] = shadowestimation(images)
 
     for it=1:4
 
-        pixel = images(:,index);
+        pixel = smimages(:,index);
         %y = filter(b,a,double(pixel));
 
 
@@ -51,14 +51,15 @@ function [S, threshold] = shadowestimation(images)
         thresh = threshold(:,index);
 
         subplot(2,2,it)
-        plot(frames, shadow, 'b')
+        plot(frames, shadow, 'm')
         hold on;
         plot(frames, pixel,'r')
         plot(frames, thresh,'c')
         
-        title(strcat('Pixel #',index,' tracked'));
+        title(strcat('Pixel #', num2str(index), 'tracked'));
         xlabel('time');
         ylabel('pixel value');
+        legend('shadow estimation','pixel intensities','threshold')
         hold off;
         index=index+25000;
     end
