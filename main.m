@@ -32,6 +32,7 @@ function main
         phi_r = phi_r - min(phi_r(:));
     end
     phi_r = (phi_r - min(phi_r(:))) ./ (max(phi_r(:)) - min(phi_r(:)));
+    %phi_r = imcomplement(phi_r);
 
     
     frame_r = W_sun_r;

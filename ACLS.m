@@ -1,5 +1,5 @@
 
-function [W,H,phi] = ACLS(V,C, sunsky)
+function [W,H,phi] = ACLS()%V,C, sunsky)
     %Here we use alternating constrained least squares to decompose the nxm
     %matrix V into a nxk matrix W and a kxm matrix H. 
     %The concept is to minimize the euclidean error: 
@@ -11,7 +11,7 @@ function [W,H,phi] = ACLS(V,C, sunsky)
         run('/Users/elisecotton/vlfeat-0.9.19/toolbox/vl_setup')
         
     %small matrices for testing 
-   %{
+   
     fun = @(x)x*x;
     x = 100;
     z = 50;
@@ -26,19 +26,12 @@ function [W,H,phi] = ACLS(V,C, sunsky)
     [n,m] = size(V);
     C = randi([0 1], n, m);
     sunsky= 'sun'
-    %}
+    
     
     k = 1; %k is between 1 and 5. paper uses 1
     
-
     fprintf('initializing W and H \n')
     [W,H] = initializeACLS(V,k);  
-    
-    
-    
-    %not necessary in lsqnonneg
-    %A = -1 * eye(k);
-    %b = zeros(k,1);
     
     if strcmp(sunsky,'sun')
         [W,H,phi] = sun_solve(V,C,W,H);
@@ -83,21 +76,6 @@ function [W_f,H_f,phi] = sky_solve(V,C,W,H)
     %test against other decomposer    
     NewA = V .* C;
     [Wcoeff,Hbasis,numIter,tElapsed,finalResidual]=wnmfrule(NewA,1);
-    
-    i = round(n/3) + 7;
-        figure
-        for it = 1:4
-            frames = 1:m; 
-            
-            subplot(2,2,it)
-            hold on;
-            plot(frames, (C(i,:) .* V(i,:)),'m');
-            plot(frames, (W(i,:) * H),'r');
-            plot(frames, (Wcoeff(i,:) * Hbasis), 'c');
-
-            i = i + round(n/8);
-        end
-    
     
     W_f = W;
     H_f = H;
@@ -160,33 +138,27 @@ function [W_f,H_f,phi] = sun_solve(V,C,W,H)
         fprintf('optimizing phi \n');
         %now we solve for phi
          phi = calculatePhi(V,H,n);
-         
-         
-        i = round(n/3) + 7;
-        frames = 1:m; 
-
-        figure
-            hold on;
-            plot(frames,H,'m');
-        
-        for it = 1:4
-            shift_frames = (1 + phi(i)):(m + phi(i));
-            
-            
-            plot(shift_frames, (C(i,:) .* V(i,:)),'r');
-            %plot(shift_frames, (W(i,:) * H),'c');
-
-            %{ 
-            options = optimoptions('lsqcurvefit', 'Display', 'off');
-            ph = lsqcurvefit(myfun, 0, x_data, (C(i,:) .* V(i,:)),[],[],options);
-            phi(i) = ph;
-            ph
-            %}
-            i = i + round(n/8);
-        end
         
     end
     
+    i = round(n / 2);
+    figure
+    frames = 1:m;
+    colors = ['c','y','g','b'];
+    %shifted_frames = frames + phi(i,:);
+        hold on;
+        
+    for it = 1:2
+        shifted_frames = frames - phi(i,:);
+
+        phi(i,:)
+        plot(frames, C(i,:) .* V(i,:),colors(2 + it));
+        
+        plot(shifted_frames, C(i,:) .* V(i,:),colors(it));
+        i = i + round(n/8);
+    end
+            plot(frames, H,'r');
+
     W_f = W;
     H_f = H;
 end
@@ -213,7 +185,7 @@ phi_n = zeros(n,1);
         [r,lag] = xcorr(V(i,:), H);
         [~,I] = max(abs(r));
         lagDiff = lag(I);
-        phi_n(i) = lagDiff;
+        phi_n(i) = -1 * lagDiff;
     end
 end
 
