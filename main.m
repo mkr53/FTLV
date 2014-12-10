@@ -16,7 +16,7 @@ function main
     %this is our binary sky mask. we will remove sky pixels from the matrix
     %that we do calcualtions on 
     sky_mask = imresize(imread('skymask.png', 'png'),image_size);
-
+   
     %F_t is a fxnx3 matrix where f is the number of frames and n is the number
     %of NON-SKY pixels
     F_t = removeSky(images,sky_mask);
@@ -24,13 +24,21 @@ function main
     clear images
 
     %run FTLV algorithm
-    [I_sky_r, W_sky_r, H_sky_r, I_sun_r, S_r, W_sun_r, H_sun_r, phi_r, threshs_r, H_shifted_r] = FTLV(F_t(:,:,1),'r');
-    [I_sky_g, W_sky_g, H_sky_g, I_sun_g, S_g, W_sun_g, H_sun_g, phi_g, threshs_g, H_shifted_g] = FTLV(F_t(:,:,2),'g');
-    [I_sky_b, W_sky_b, H_sky_b, I_sun_b, S_b, W_sun_b, H_sun_b, phi_b, threshs_b, H_shifted_b] = FTLV(F_t(:,:,3),'b');
+    [I_sky_r, W_sky_r, H_sky_r, I_sun_r, S_r, W_sun_r, H_sun_r, phi_r] = FTLV(F_t(:,:,1),'r');
+    [I_sky_g, W_sky_g, H_sky_g, I_sun_g, S_g, W_sun_g, H_sun_g, phi_g] = FTLV(F_t(:,:,2),'g');
+    [I_sky_b, W_sky_b, H_sky_b, I_sun_b, S_b, W_sun_b, H_sun_b, phi_b] = FTLV(F_t(:,:,3),'b');
     
-   
-    %total reconstracted matrix = 
-    F = I_sky + S_r*I_sun;
+    %total reconstracted matrix =
+    F = zeros(f,image_size(1),image_size(2),d);
+    F(:,:,:,1) = permute(replaceSky((I_sky_r' + S_r .* I_sun_r),sky_mask), [3 1 2]);
+    F(:,:,:,2) = permute(replaceSky((I_sky_g' + S_g .* I_sun_g),sky_mask), [3 1 2]);
+    F(:,:,:,3) = permute(replaceSky((I_sky_b' + S_b .* I_sun_b),sky_mask), [3 1 2]);
+    
+    fprintf('FTLV complete for all channels');
+    
+    figure
+    imshow(F(275,:,:,:));
+
     %RMS error
     RMS= calculateRMS(F, F_t);
     disp(strcat('RMS: ',num2str(RMS)));
@@ -147,17 +155,18 @@ end
 function color_image = createColorImage(R,G,B,sky_mask)
 %to display the image, we must replace the sky
     image_size = size(sky_mask);
-    frame_r = (R - min(R(:))) ./ (max(R(:)) - min(R(:)) );
+    frame_r = normalize_frame(R);
     frame_r = backIntoImage(frame_r, sky_mask);
-    frame_g = G;
-    frame_g = (frame_g - min(frame_g(:))) ./ (max(frame_g(:)) - min(frame_g(:)) );
+    frame_g = normalize_frame(G);
     frame_g = backIntoImage(frame_g, sky_mask);
-    frame_b = B;
-    frame_b = (frame_b - min(frame_b(:))) ./ (max(frame_b(:)) - min(frame_b(:)) );
+    frame_b = normalize_frame(B);
     frame_b = backIntoImage(frame_b, sky_mask);
     color_image = zeros(image_size(1),image_size(2), 3);
     color_image(:,:,1) = frame_r;
     color_image(:,:,2) = frame_g;
     color_image(:,:,3) = frame_b;
-    color_image = color_image * 256; 
+end
+
+function n_frame = normalize_frame(F)
+    n_frame = (F - min(F(:))) ./ (max(F(:)) - min(F(:)));
 end
